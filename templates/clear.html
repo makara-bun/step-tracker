@@ -1,0 +1,28 @@
+{{define "clear"}}
+<section class="on-sky relative overflow-hidden text-on-air">
+  <div class="relative mx-auto max-w-xl">
+    <svg viewBox="0 0 400 236" class="-mb-px block w-full overflow-visible" aria-hidden="true">
+      {{template "short-hills"}}
+      <g transform="translate(320 212)">{{template "walker" (pose .Walker.Key "asleep")}}</g>
+      {{template "short-soil"}}
+    </svg>
+    <div class="absolute inset-x-0 top-0 px-5 pt-5 sm:px-6">
+      <h1 class="max-w-52 font-display text-4xl leading-none font-extrabold sm:max-w-80 sm:text-5xl">Clear all your data?</h1>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-xl px-4 pt-3 pb-28">
+  {{if .Days}}
+  <p class="text-lg leading-snug">This permanently deletes <b>{{plural .Days "day"}} of steps</b> ({{commas .Steps}} steps in total) and resets your daily goal and character.</p>
+  {{else}}
+  <p class="text-lg leading-snug">You have no steps logged, so this only resets your daily goal and character.</p>
+  {{end}}
+  <p class="mt-2 text-lg leading-snug">You can't undo this.</p>
+
+  <form method="post" action="/clear" class="mt-6 flex flex-col gap-3 sm:flex-row">
+    <button class="min-h-13 flex-1 cursor-pointer rounded-xl bg-pip px-5 font-display text-lg font-bold text-ink">Clear all data</button>
+    <a href="/" class="flex min-h-13 flex-1 items-center justify-center rounded-xl border-2 border-meadow px-5 font-display text-lg font-bold">Keep my data</a>
+  </form>
+</section>
+{{end}}

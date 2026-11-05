@@ -1,0 +1,72 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{.Title}} - Pip Steps</title>
+  <meta name="description" content="Log your steps and watch Pip walk up the hill.">
+  <meta name="theme-color" content="#7FD1E8">
+  <meta name="htmx-config" content='{"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"422","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <link rel="preload" href="/static/fonts/grandstander.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js"></script>
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="min-h-dvh bg-soil font-body text-cream" hx-boost="true" hx-target="#view" hx-indicator="#view">
+  <div class="pointer-events-none absolute inset-x-0 top-2 z-10 mx-auto flex max-w-xl justify-end px-3 sm:px-4">
+    <button id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Night mode" class="theme-toggle pointer-events-auto">
+      <span class="theme-knob"></span>
+      <svg viewBox="0 0 24 24" class="relative size-6" aria-hidden="true">
+        <path class="stroke-on-air" d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2 19 19M5 19l1.8-1.8M17.2 6.8 19 5" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="5" fill="#FFC93C" stroke="#14233B" stroke-width="1.5"/>
+      </svg>
+      <svg viewBox="0 0 24 24" class="relative size-6" aria-hidden="true">
+        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="#F3EDC8" stroke="#14233B" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+  <div id="view">{{template "view-body" .}}</div>
+  <p id="toast" role="status" class="toast" hidden></p>
+</body>
+</html>{{end}}
+
+{{define "view"}}<title>{{.Title}} - Pip Steps</title>{{template "view-body" .}}{{end}}
+
+{{define "view-body"}}
+{{if eq .Name "day"}}{{template "day" .Day}}{{else if eq .Name "clear"}}{{template "clear" .Clear}}{{else}}{{template "period" .Period}}{{end}}
+<nav aria-label="Views" class="fixed inset-x-0 bottom-0 z-20 bg-ink pb-[env(safe-area-inset-bottom)]">
+  <ul class="mx-auto grid max-w-xl grid-cols-3">
+    {{range .Tabs}}
+    <li>
+      <a href="{{.Href}}" {{if .Active}}aria-current="page"{{end}}
+         class="flex min-h-15 flex-col items-center justify-center gap-0.5 text-sm {{if .Active}}font-bold text-sun{{else}}text-cream{{end}}">
+        {{template "tab-icon" .Icon}}
+        {{.Label}}
+      </a>
+    </li>
+    {{end}}
+  </ul>
+</nav>
+{{end}}
+
+{{define "tab-icon"}}
+<svg viewBox="0 0 24 24" class="size-6" fill="currentColor" aria-hidden="true">
+  {{if eq . "day"}}
+  <circle cx="12" cy="12" r="5"/>
+  <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  {{else if eq . "month"}}
+  <path fill-rule="evenodd" d="M6 3h2v2h8V3h2v2h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V3Zm-1 7v9h14v-9H5Zm2 2h3v3H7v-3Z"/>
+  {{else}}
+  <path d="M2 20 9 7l4 6 2-3 7 10H2Z"/>
+  {{end}}
+</svg>
+{{end}}
+
+{{define "chevron"}}
+<svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {{if eq . "prev"}}<path d="m15 5-7 7 7 7"/>{{else}}<path d="m9 5 7 7-7 7"/>{{end}}
+</svg>
+{{end}}

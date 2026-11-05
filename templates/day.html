@@ -1,0 +1,151 @@
+{{define "day"}}
+<section class="on-sky relative overflow-hidden text-on-air">
+  {{/* The extra sky keeps the theme switch clear of the walker at the flag. */}}
+  <div class="relative mx-auto max-w-xl pt-12">
+    {{template "scene" .}}
+    <div class="absolute inset-x-0 top-0 px-3 pt-2 sm:px-4">
+      <div class="flex items-center gap-1">
+        <a href="{{.PrevHref}}" aria-label="Previous day" class="grid size-11 place-items-center rounded-full">{{template "chevron" "prev"}}</a>
+        <h1 class="min-w-20 text-center font-display text-xl font-bold">{{.Heading}}</h1>
+        {{if .NextHref}}<a href="{{.NextHref}}" aria-label="Next day" class="grid size-11 place-items-center rounded-full">{{template "chevron" "next"}}</a>{{end}}
+      </div>
+      <div class="px-2">
+        <p class="font-display text-[4rem] leading-none font-extrabold sm:text-8xl">{{commas .Steps}}</p>
+        <p id="status" aria-live="polite" class="mt-1 max-w-52 text-lg leading-snug font-bold sm:max-w-72">{{.Status}}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-xl px-4 pt-3 pb-28">
+  <form method="post" action="{{.Path}}/steps">
+    <label for="steps" class="font-display text-lg font-bold">{{if .IsToday}}Your steps today{{else}}Your steps on {{.Heading}}{{end}}</label>
+    <div class="mt-1.5 flex gap-2">
+      <input id="steps" name="steps" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="{{.Input}}"
+             {{if .Error}}aria-invalid="true" aria-describedby="steps-error"{{end}}
+             class="min-h-13 w-full min-w-0 flex-1 rounded-xl bg-cream px-4 font-display text-2xl font-bold text-ink placeholder:text-ink/50">
+      <button class="min-h-13 shrink-0 cursor-pointer rounded-xl bg-sun px-5 font-display text-lg font-bold text-ink">Save steps</button>
+    </div>
+    {{if .Error}}<p id="steps-error" role="alert" class="mt-2 font-bold text-sun">{{.Error}}</p>{{end}}
+  </form>
+
+  <form method="post" action="{{.Path}}/add" class="mt-3 flex flex-wrap gap-2">
+    {{range .QuickAdds}}
+    <button name="steps" value="{{.}}" class="min-h-11 flex-1 cursor-pointer rounded-full border-2 border-meadow px-3 font-display font-bold whitespace-nowrap text-cream">Add {{commas .}}</button>
+    {{end}}
+  </form>
+
+  {{if .Steps}}
+  <div class="mt-6 flex items-center gap-4">
+    {{with .Compare}}<span class="shrink-0 rounded-2xl bg-air p-2"><svg viewBox="0 0 100 120" class="block h-20 w-16" aria-hidden="true">{{template "landmark" .Art}}</svg></span>{{end}}
+    <div class="min-w-0">
+      <p class="text-lg leading-snug">{{.Distance}}.{{with .Compare}} That's {{.Text}}.{{end}}</p>
+      {{with .MoreFacts}}<ul class="mt-2 space-y-1 leading-snug">{{range .}}<li>Or {{.Text}}.</li>{{end}}</ul>{{end}}
+    </div>
+  </div>
+  {{end}}
+
+  <form method="post" action="/walker" class="mt-6">
+    <input type="hidden" name="date" value="{{slice .Path 5}}">
+    <h2 id="walker-heading" class="font-display text-lg font-bold">Who's walking?</h2>
+    <div role="group" aria-labelledby="walker-heading" class="mt-2 grid grid-cols-3 gap-3">
+      {{range .Walkers}}
+      {{$picked := eq .Key $.Walker.Key}}
+      <button name="walker" value="{{.Key}}" aria-pressed="{{if $picked}}true{{else}}false{{end}}" class="cursor-pointer rounded-2xl">
+        <span class="block rounded-2xl bg-air py-2 {{if $picked}}ring-3 ring-sun ring-offset-2 ring-offset-soil{{end}}">
+          <svg viewBox="-32 -72 62 74" class="mx-auto block h-20 w-full" aria-hidden="true">{{template "walker" (pose .Key "walking")}}</svg>
+        </span>
+        <span class="mt-1.5 flex items-center justify-center gap-1 font-display font-bold">
+          {{if $picked}}<svg viewBox="0 0 24 24" class="size-4 text-sun" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 13 5 5L20 6"/></svg>{{end}}
+          {{.Name}}
+        </span>
+      </button>
+      {{end}}
+    </div>
+  </form>
+
+  <details id="goal-row" class="group mt-6 scroll-mt-4 rounded-2xl border-2 border-meadow" {{if .GoalError}}open{{end}}>
+    <summary class="flex cursor-pointer list-none items-center gap-3 rounded-2xl p-2 pr-3 [&::-webkit-details-marker]:hidden">
+      {{template "row-art" "goal"}}
+      <span class="min-w-0 flex-1">
+        <span class="block font-display text-lg leading-tight font-bold">Change your goal</span>
+        <span class="block text-sm">{{commas .Goal}} steps a day</span>
+      </span>
+      <svg viewBox="0 0 24 24" class="size-6 shrink-0 motion-safe:transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
+    </summary>
+    <form method="post" action="/goal" class="px-2 pb-2">
+      <input type="hidden" name="date" value="{{slice .Path 5}}">
+      <label for="goal" class="sr-only">Daily goal in steps</label>
+      <div class="flex gap-2">
+        <input id="goal" name="goal" type="text" inputmode="numeric" autocomplete="off" value="{{.Goal}}"
+               {{if .GoalError}}aria-invalid="true" aria-describedby="goal-error"{{end}}
+               class="min-h-11 w-full min-w-0 flex-1 rounded-xl bg-cream px-4 font-bold text-ink">
+        <button class="min-h-11 shrink-0 cursor-pointer rounded-xl border-2 border-meadow px-4 font-bold">Save goal</button>
+      </div>
+      {{if .GoalError}}<p id="goal-error" role="alert" class="mt-2 font-bold text-sun">{{.GoalError}}</p>{{end}}
+    </form>
+  </details>
+
+  <a href="/clear" class="mt-3 flex items-center gap-3 rounded-2xl border-2 border-meadow p-2 pr-3">
+    {{template "row-art" "clear"}}
+    <span class="min-w-0 flex-1">
+      <span class="block font-display text-lg leading-tight font-bold">Clear all data</span>
+      <span class="block text-sm">You'll confirm first</span>
+    </span>
+    <svg viewBox="0 0 24 24" class="size-6 shrink-0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+  </a>
+</section>
+{{end}}
+
+{{define "scene"}}
+<svg viewBox="0 0 400 300" class="-mb-px block w-full overflow-visible" role="img"
+     aria-label="{{.Walker.Name}} is {{.Pct}}% of the way up the hill to the goal flag.">
+  {{template "stars"}}
+  <g class="scene-moon">
+    <circle cx="322" cy="92" r="58" fill="#FDF8E8" fill-opacity=".1"/>
+    <circle cx="322" cy="92" r="42" fill="#F3EDC8"/>
+    <circle cx="308" cy="78" r="7" fill="#DCD5AC"/><circle cx="334" cy="104" r="9" fill="#DCD5AC"/><circle cx="337" cy="74" r="4" fill="#DCD5AC"/><circle cx="305" cy="108" r="3.5" fill="#DCD5AC"/>
+  </g>
+  <g class="scene-sun">
+    <circle cx="322" cy="92" r="66" fill="#FFE08A"/>
+    <circle cx="322" cy="92" r="48" fill="#FFC93C"/>
+  </g>
+  <path d="M238 58c0-8 7-13 14-11 3-7 16-8 20 0 8-2 13 3 13 11Z" class="fill-cloud" transform="translate(-16 -73)"/>
+  <path class="fill-cloud" d="M-60 40c0-7 6-11 12-9 3-6 13-7 17 0 6-2 11 3 11 9Z"/>
+
+  {{/* The hills stop short of the bottom edge, so only soil reaches it. A layer under
+       the soil would show through there when the height isn't a whole pixel. */}}
+  <path d="M-2000 210H-40C40 210 70 170 130 170s90 40 150 40 90-70 170-70 130 60 240 60H3000V296H-2000Z" class="fill-hill-far"/>
+  <g class="fill-hill-near">
+    <circle cx="20" cy="192" r="11"/><rect class="fill-trunk" x="18" y="198" width="4" height="14"/>
+    <circle cx="42" cy="186" r="8"/><rect class="fill-trunk" x="40" y="191" width="4" height="10"/>
+  </g>
+
+  <path d="M-2000 275H-100C-50 275 0 270 30 268 120 262 170 240 220 190s80-65 125-78c27-8 55 18 95 58s120 100 260 110H3000V296H-2000Z" class="fill-hill-near"/>
+  <g fill="#FDF8E8" stroke="#14233B" stroke-width="1.5" transform="translate(92 279)">
+    <circle cx="0" cy="-6" r="9"/><circle cx="-7" cy="-4" r="6"/><circle cx="7" cy="-4" r="6"/>
+    <rect x="8" y="-11" width="10" height="9" rx="4" fill="#14233B"/>
+    <path d="M-4 2v6M4 2v6" stroke-linecap="round"/>
+  </g>
+
+  <path d="M30 268C120 262 170 240 220 190s80-65 125-78" fill="none" stroke="#FDF8E8" stroke-opacity=".55" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <path id="trail" class="pip-trail" pathLength="100" d="M30 268C120 262 170 240 220 190s80-65 125-78" fill="none" stroke="#FFC93C" stroke-width="6" stroke-linecap="round"
+        style="stroke-dasharray:{{.Pct}} 100"/>
+
+  <g transform="translate(362 110)">
+    <path class="stroke-on-air" d="M0 2V-58" stroke-width="4" stroke-linecap="round"/>
+    <path d="M2-58 34-46 2-34Z" fill="#FF5C8A" stroke="#14233B" stroke-width="2" stroke-linejoin="round"/>
+    {{if .Celebrate}}
+    <g class="confetti" aria-hidden="true">
+      {{range .Confetti}}<rect x="-3" y="-3" width="6" height="6" rx="1" fill="{{.Color}}" style="--x:{{.X}}px;--y:{{.Y}}px;animation-delay:{{.Delay}}ms"/>{{end}}
+    </g>
+    {{end}}
+  </g>
+
+  <g id="pip" class="pip-walker {{if .Animate}}is-walking{{end}}" style="offset-distance:{{.Pct}}%">
+    {{template "walker" (pose .Walker.Key .Mood)}}
+  </g>
+
+  <path d="M-2000 292H0c50 0 90-7 150-5s110 8 170 3 120 2 200 2H3000V400H-2000Z" class="fill-soil"/>
+</svg>
+{{end}}

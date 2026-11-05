@@ -1,0 +1,177 @@
+{{define "period"}}
+<section class="on-sky relative overflow-hidden text-on-air">
+  <div class="relative mx-auto max-w-xl">
+    <svg viewBox="0 0 400 236" class="-mb-px block w-full overflow-visible" aria-hidden="true">
+      {{template "short-hills"}}
+      {{if .Compare}}
+      <g transform="translate(278 90)">{{template "landmark" .Compare.Art}}</g>
+      {{if gt .Compare.Count 1}}<text x="272" y="118" text-anchor="end" class="fill-on-air font-display" font-size="24" font-weight="800">× {{commas .Compare.Count}}</text>{{end}}
+      {{else if .Total}}
+      <g transform="translate(330 212)">{{template "walker" (pose .Walker.Key "walking")}}</g>
+      {{else}}
+      <g transform="translate(320 212)">{{template "walker" (pose .Walker.Key "asleep")}}</g>
+      {{end}}
+      {{template "short-soil"}}
+    </svg>
+    <div class="absolute inset-x-0 top-0 px-3 pt-2 sm:px-4">
+      <div class="flex items-center gap-1">
+        <a href="{{.PrevHref}}" aria-label="Previous {{.Kind}}" class="grid size-11 place-items-center rounded-full max-[359px]:size-10">{{template "chevron" "prev"}}</a>
+        <h1 class="min-w-20 text-center font-display text-xl font-bold max-[359px]:text-base">{{.Title}}</h1>
+        {{if .NextHref}}<a href="{{.NextHref}}" aria-label="Next {{.Kind}}" class="grid size-11 place-items-center rounded-full max-[359px]:size-10">{{template "chevron" "next"}}</a>{{end}}
+      </div>
+      <div class="px-2">
+        <p class="font-display text-[length:clamp(2.25rem,12.3vw,3rem)] leading-none font-extrabold sm:text-7xl">{{commas .Total}}</p>
+        <p class="mt-1 text-lg font-bold">steps</p>
+        {{with .Distance}}<p class="max-w-44 leading-snug sm:max-w-64">{{.}}</p>{{end}}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-xl px-4 pt-3 pb-28">
+  {{if .EmptyText}}
+  <p class="text-lg">{{.EmptyText}}</p>
+  <a href="{{.TodayHref}}" class="mt-3 inline-flex min-h-11 items-center rounded-xl bg-sun px-5 font-display text-lg font-bold text-ink">Log today's steps</a>
+  {{else}}
+  {{with .Compare}}<p class="text-lg leading-snug">That's {{.Text}}.</p>{{end}}
+  {{end}}
+  {{if .Calendar}}{{template "calendar" .}}{{end}}
+  {{if not .EmptyText}}
+  {{template "chart" .Chart}}
+  <ul class="mt-5 space-y-1 leading-snug">
+    {{range .Summary}}<li>{{.}}</li>{{end}}
+  </ul>
+  <details class="mt-5">
+    <summary class="flex min-h-11 cursor-pointer items-center underline underline-offset-4">Show every {{if eq .Kind "month"}}day{{else}}month{{end}} as a table</summary>
+    <table class="mt-2 w-full border-collapse">
+      <thead>
+        <tr class="border-b border-moss text-left">
+          <th scope="col" class="py-2 font-bold">{{.TableLabel}}</th>
+          <th scope="col" class="py-2 text-right font-bold">Steps</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Chart.Bars}}{{if not .Future}}
+        <tr class="border-b border-moss/60">
+          <td class="py-0"><a href="{{.Href}}" class="flex min-h-11 items-center underline underline-offset-4">{{.Name}}</a></td>
+          <td class="py-0 text-right tabular-nums">{{commas .Value}}</td>
+        </tr>
+        {{end}}{{end}}
+      </tbody>
+    </table>
+  </details>
+  {{end}}
+</section>
+{{end}}
+
+{{define "calendar"}}
+{{/* An empty month has no chart below it, so without the extra height the page is too short
+     to scroll the heading to the top, and the arrows would move between months. */}}
+<section class="mt-5 {{if .EmptyText}}min-h-dvh{{end}}" aria-labelledby="calendar-heading">
+  <div class="flex items-center justify-between gap-2">
+    <h2 id="calendar-heading" class="scroll-mt-4 font-display text-lg font-bold">Your calendar</h2>
+    {{/* hx-swap keeps the calendar in view, because boosted links scroll to the top. An empty
+         slot stands in for the next arrow, so the previous arrow doesn't move under your finger. */}}
+    <div class="flex items-center">
+      <a href="{{.PrevHref}}" hx-swap="innerHTML show:#calendar-heading:top" aria-label="Previous month" class="grid size-11 place-items-center rounded-full">{{template "chevron" "prev"}}</a>
+      <span class="min-w-20 text-center font-display font-bold">{{.CalendarLabel}}</span>
+      {{if .NextHref}}<a href="{{.NextHref}}" hx-swap="innerHTML show:#calendar-heading:top" aria-label="Next month" class="grid size-11 place-items-center rounded-full">{{template "chevron" "next"}}</a>{{else}}<span class="size-11" aria-hidden="true"></span>{{end}}
+    </div>
+  </div>
+  <ul class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <li class="flex items-center gap-1.5"><span class="size-3 rounded-sm bg-sun"></span>Goal reached</li>
+    <li class="flex items-center gap-1.5"><span class="size-3 rounded-sm bg-meadow"></span>Under goal</li>
+  </ul>
+  <div class="mt-3 grid grid-cols-7 gap-1 text-center text-xs" aria-hidden="true">
+    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+  </div>
+  <ol class="mt-1 grid grid-cols-7 gap-1">
+    {{range .Calendar}}
+    <li {{if .Start}}style="grid-column-start:{{.Start}}"{{end}}>
+      {{if .Future}}
+      <span class="flex h-14 flex-col items-start rounded-lg p-1 text-xs font-bold opacity-50" aria-label="{{.Label}}">{{.Day}}</span>
+      {{else}}
+      <a href="{{.Href}}" aria-label="{{.Label}}" {{if .Today}}aria-current="date"{{end}}
+         class="relative flex h-14 flex-col justify-between rounded-lg p-1 text-left
+           {{if .Reached}}bg-sun text-ink{{else if .Steps}}bg-meadow text-ink{{else}}border border-moss{{end}}
+           {{if .Today}}ring-2 ring-cream ring-offset-2 ring-offset-soil{{end}}">
+        <span class="text-xs leading-none font-bold">{{.Day}}</span>
+        {{if .Reached}}
+        <svg viewBox="0 0 12 12" class="absolute top-1 right-1 size-3" aria-hidden="true">
+          <path d="M3 11.5V1" stroke="#14233B" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M3.5 1 10 3.5 3.5 6Z" fill="#FF5C8A" stroke="#14233B" stroke-width="1" stroke-linejoin="round"/>
+        </svg>
+        {{end}}
+        {{if .Steps}}<span class="block text-center font-display text-[0.8rem] leading-none font-bold whitespace-nowrap max-[359px]:text-[0.7rem]">{{.Steps}}</span>{{end}}
+      </a>
+      {{end}}
+    </li>
+    {{end}}
+  </ol>
+</section>
+{{end}}
+
+{{define "chart"}}
+<figure class="mt-5">
+  <figcaption class="font-display text-lg font-bold">{{.Caption}}</figcaption>
+  {{if .HasGoal}}
+  <ul class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <li class="flex items-center gap-1.5"><span class="size-3 rounded-sm bg-sun"></span>Goal reached</li>
+    <li class="flex items-center gap-1.5"><span class="size-3 rounded-sm bg-meadow"></span>Under goal</li>
+    <li class="flex items-center gap-1.5"><span class="h-px w-4 bg-cream"></span>{{.GoalLabel}}</li>
+  </ul>
+  {{end}}
+
+  <div class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 pt-12">
+    <div class="relative h-48 w-9 text-right text-xs tabular-nums" aria-hidden="true">
+      {{range .Ticks}}<span class="absolute right-0 translate-y-1/2" style="bottom:{{.Pct}}%">{{.Label}}</span>{{end}}
+    </div>
+
+    <div class="relative h-48">
+      {{range .Ticks}}<span class="absolute inset-x-0 h-px bg-moss" style="bottom:{{.Pct}}%" aria-hidden="true"></span>{{end}}
+      {{if .HasGoal}}<span class="absolute inset-x-0 z-[1] h-px bg-cream" style="bottom:{{.GoalPct}}%" aria-hidden="true"></span>{{end}}
+      <ol class="relative flex h-full gap-0.5">
+        {{range .Bars}}
+        <li class="relative h-full min-w-0 flex-1">
+          {{if not .Future}}
+          <a href="{{.Href}}" aria-label="{{.Name}}: {{commas .Value}} steps" class="group absolute inset-0 flex items-end justify-center">
+            <span class="w-full max-w-6 rounded-t-[4px] {{if .MetGoal}}bg-sun{{else}}bg-meadow{{end}}" style="height:{{.Pct}}%"></span>
+            {{if .Best}}
+            <svg viewBox="-30 -74 60 76" class="pointer-events-none absolute left-1/2 h-11 w-9 -translate-x-1/2" style="bottom:{{.Pct}}%" aria-hidden="true">{{template "walker" (pose $.Walker "summit")}}</svg>
+            {{end}}
+            <span class="pointer-events-none absolute z-10 hidden rounded-lg bg-cream px-2 py-1 text-sm whitespace-nowrap text-ink group-hover:block group-focus-visible:block
+              {{if eq .Align "left"}}left-0{{else if eq .Align "right"}}right-0{{else}}left-1/2 -translate-x-1/2{{end}}" style="bottom:calc({{.Pct}}% + 8px)">
+              <b>{{commas .Value}}</b> on {{.Name}}
+            </span>
+          </a>
+          {{end}}
+        </li>
+        {{end}}
+      </ol>
+    </div>
+
+    <div></div>
+    <div class="mt-1 flex gap-0.5 text-xs" aria-hidden="true">
+      {{range .Bars}}
+      <span class="relative flex h-7 min-w-0 flex-1 flex-col items-center">
+        <span class="whitespace-nowrap {{if .Current}}font-bold{{end}}">
+          {{if .AxisShort}}<span class="min-[380px]:hidden">{{.AxisShort}}</span><span class="max-[379px]:hidden">{{.Axis}}</span>{{else}}{{.Axis}}{{end}}
+        </span>
+        {{if .Current}}<span class="absolute top-4.5 size-1.5 rounded-full bg-cream"></span>{{end}}
+      </span>
+      {{end}}
+    </div>
+  </div>
+</figure>
+{{end}}
+
+{{define "short-hills"}}
+{{template "stars"}}
+<path d="M-30 74c0-7 6-11 12-9 3-6 13-7 17 0 6-2 11 3 11 9Z" class="fill-cloud" transform="translate(330 -8)"/>
+<path d="M-2000 196H0c60 0 90-22 160-22s120 26 190 26 130-14 240-8H3000V233H-2000Z" class="fill-hill-far"/>
+<path d="M-2000 218H0c70 0 130-16 220-12s140 10 240 6 140 4 240 4H3000V233H-2000Z" class="fill-hill-near"/>
+{{end}}
+
+{{define "short-soil"}}
+<path d="M-2000 228H0c60 0 110-6 170-4s130 8 230 4 170 2 300 2H3000V400H-2000Z" class="fill-soil"/>
+{{end}}
